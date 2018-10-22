@@ -20,6 +20,10 @@ def multifile_cleaner(input_folder, output_path, sample_names=None, proteins_fil
     cleaned_dfs = {}
     standard_cols = ['Sequence', 'Proteins', 'Gene names', 'Protein names', 'Unique (Groups)', 'Unique (Proteins)', ] + pep_cols
 
+    # filter out non-unique, reverse and contaminant peptides
+    filtered_pep = peptides[(peptides['Reverse'] != '+') & (peptides['Potential contaminant'] != '+') &(peptides['Unique (Proteins)'] == 'yes')]
+    filtered_pep['cys_rank'] = [1 if 'C' in pep else 0 for pep in filtered_pep['Sequence']]
+
     if sample_names is None:
         logger.info(f'Sample names not set. Collecting all samples.')
         sample_names = [x.replace('Identification type ', '').split('_')[:-1] for x in peptides.columns.tolist() if 'Identification type ' in x]
@@ -29,7 +33,9 @@ def multifile_cleaner(input_folder, output_path, sample_names=None, proteins_fil
 
     for sample in sample_names:
         sample_cols = [col for col in peptides.columns.tolist() if 'Ratio H/L '+sample in col]
-        cleaned_dfs[sample] = peptides[standard_cols + sample_cols]
+        # filter those without any values for that sample
+        filtered = peptides[sample_cols].dropna(axis=0, how='any', thresh=1, subset=sample_cols)
+        cleaned_dfs[sample] = filtered_pep[standard_cols + sample_cols]
     logger.info(f'Successfully cleaned peptide dataframe.')
 
     logger.info(f'Collecting proteins')
@@ -75,7 +81,7 @@ def multifile_cleaner(input_folder, output_path, sample_names=None, proteins_fil
         FileHandling.df_to_excel(output_path+sample+'_MQ_Proteins.xlsx', sheetnames=['Proteins'], data_frames = [prot_dataframe])
         FileHandling.df_to_excel(output_path+sample+'_MQ_Peptides.xlsx', sheetnames=['Peptides'], data_frames = [pep_dataframe])
         FileHandling.df_to_excel(output_path+sample+'_Compiled.xlsx', sheetnames=['Proteins', 'Peptides'], data_frames = [prot_dataframe, pep_dataframe])
-        #logger.debug(pep_dataframe.columns.tolist())
+            #logger.debug(pep_dataframe.columns.tolist())
 
     logger.info(f'Proteins and peptides successfully cleaned. Dataframes save to {output_path}.')
 
