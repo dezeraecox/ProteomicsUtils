@@ -53,12 +53,14 @@ def main(input_path, output_path, sample_name, do_plots=True, input_type=None, m
         logger.info('Invalid data source detected. Please use MQ or PD')
 
     #raj only considers peptides that are observed in all replicates
-    quant_data = quant_data.dropna(axis=0, how='any', thresh=missing_threshold, subset=col_list)
+    quant_data = quant_data.dropna(axis=0, how='any', thresh=(len(col_list)-missing_threshold), subset=col_list)
 
     two_unique_cys, cys_pep, non_cys_pep = DataWrangling.Unique_Cys_sorter(quant_data)
     #set index of summary dataframes to the protein accession
     cys_pep = cys_pep.set_index(["ProteinID"], drop=False)
+    logger.debug(f'Cys_pep df: {cys_pep.head()}')
     non_cys_pep = non_cys_pep.set_index(["ProteinID"], drop=False)
+    logger.debug(f'NonCys_pep df: {non_cys_pep.head()}')
 
     non_cys_Av = CalcUtils.non_cys_AR(cys_pep, non_cys_pep)
 
@@ -77,7 +79,7 @@ def main(input_path, output_path, sample_name, do_plots=True, input_type=None, m
     #collect only columns of interest for summary table
     select_col = ['ProteinID', 'Sequence'] + abundance_cols
     summary_data = summary_table[select_col]
-    summary_data.dropna(axis=0, how='any', thresh=None, subset=abundance_cols, inplace=True)
+    summary_data.dropna(axis=0, how='any', thresh=1, subset=abundance_cols, inplace=True)
     summary_data = summary_data.reset_index(drop=True)
     logger.debug(F"Summary data acquired: {summary_data}")
 
@@ -85,6 +87,7 @@ def main(input_path, output_path, sample_name, do_plots=True, input_type=None, m
     #####Paired T-test
     logger.info("Calculating t-test statistics")
     summary_data = CalcUtils.t_test_pair(summary_data, C_col, NC_col)
+    logger.debug(f"Summary dataframe contains {summary_data.columns.tolist()}")
 
     #####Include -log10 of p-value
     summary_data['-Log10 p-Value'] = -np.log10(summary_data['p-value'])
