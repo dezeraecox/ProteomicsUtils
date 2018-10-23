@@ -33,8 +33,8 @@ def multifile_cleaner(input_folder, output_path, sample_names=None, proteins_fil
 
     for sample in sample_names:
         sample_cols = [col for col in peptides.columns.tolist() if 'Ratio H/L '+sample in col]
-        # filter those without any values for that sample
-        filtered = peptides[sample_cols].dropna(axis=0, how='any', thresh=1, subset=sample_cols)
+        # filter those without any values for value in variable:
+        filtered_pep = filtered_pep.dropna(axis=0, how='any', thresh=1, subset=sample_cols)
         cleaned_dfs[sample] = filtered_pep[standard_cols + sample_cols]
     logger.info(f'Successfully cleaned peptide dataframe.')
 
@@ -52,15 +52,17 @@ def multifile_cleaner(input_folder, output_path, sample_names=None, proteins_fil
     for sample in sample_names:
         sample_cols = [col for col in proteins.columns.tolist() if sample in col]
         logger.debug(f'Sample cols: {sample_cols}')
+        ratio_cols = [col for col in sample_cols if f'Ratio H/L {sample}' in col]
+        logger.debug(f'Ratio cols: {ratio_cols}')
         #collect columns of interest
         sample_vals = proteins[standard_cols + sample_cols]
-        #collect only proteins with at least one peptide identified in that sample
-        sample_reps = sample_vals[[col for col in proteins.columns.tolist() if 'Peptides '+sample in col]].sum(axis=1)
+        #collect only proteins with at least one quantification in that sample
+        sample_reps = sample_vals.dropna(axis=0, how='any', thresh=1, subset=ratio_cols)
         logger.debug(f'Sample reps: {sample_reps.head(10)}')
         # collect only proteins which are master proteins
-        master_proteins = sample_vals[sample_vals['Number of proteins'] == 1]
+        master_proteins = sample_reps[sample_reps['Number of proteins'] == 1]
         logger.debug(f'Master proteins: {master_proteins.head(10)}')
-        cleaned_prot_dfs[sample] = master_proteins[sample_reps > 0]
+        cleaned_prot_dfs[sample] = master_proteins
 
     logger.info(f'Successfully cleaned proteins dataframe.')
 
@@ -70,7 +72,7 @@ def multifile_cleaner(input_folder, output_path, sample_names=None, proteins_fil
         #collect peptide dataframe, rename relevant columns
         pep_dataframe = cleaned_dfs[sample]
         MQ_cols = ['Protein IDs', 'Proteins', 'Protein names'] + [col for col in proteins.columns.tolist() if 'Ratio H/L '+sample in col]
-        new_cols = ['ProteinID', 'ProteinID', 'Description'] + [f'Abundance Ratio: ({sample}_{x})' for x in range(1, len(MQ_cols)+1)]
+        new_cols = ['ProteinID', 'ProteinID', 'Description'] + [f'Abundance Ratio: ({sample}_{x})' for x in range(1, len(ratio_cols)+1)]
         pep_dataframe.rename(columns=dict(zip(MQ_cols, new_cols)), inplace=True)
 
         # collect protein dataframe, rename relevant columns
