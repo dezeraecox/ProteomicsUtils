@@ -71,8 +71,11 @@ def multifile_cleaner(input_folder, output_path, sample_names=None, proteins_fil
     for sample in sample_names:
         #collect peptide dataframe, rename relevant columns
         pep_dataframe = cleaned_dfs[sample]
+        ratio_cols = [col for col in pep_dataframe if f'Ratio H/L {sample}' in col]
         MQ_cols = ['Protein IDs', 'Proteins', 'Protein names'] + [col for col in proteins.columns.tolist() if 'Ratio H/L '+sample in col]
+        logger.debug(f"MQ_cols: {MQ_cols}")
         new_cols = ['ProteinID', 'ProteinID', 'Description'] + [f'Abundance Ratio: ({sample}_{x})' for x in range(1, len(ratio_cols)+1)]
+        logger.debug(f"NEW_cols: {new_cols}")
         pep_dataframe.rename(columns=dict(zip(MQ_cols, new_cols)), inplace=True)
 
         # collect protein dataframe, rename relevant columns
