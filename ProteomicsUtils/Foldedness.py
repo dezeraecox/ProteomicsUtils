@@ -11,10 +11,12 @@ logger.info("Import Successful")
 
 
 def foldedness_scatter(summary_data, sample_name):
-    xdata, xlabel = (summary_data.loc[(summary_data['p-value'] <0.05), ['Log2 Average NC']], 'Log2 NonCys Abundance')
-    ydata, ylabel = (summary_data.loc[(summary_data['p-value'] <0.05), ['Log2 Average Ratio']], 'Log2 Cys/NonCys')
+    data_frame = summary_data[summary_data['p-value'] <0.05]
+    xdata, xlabel = (data_frame['Log2 Average NC'], 'Log2 NonCys Abundance')
+    ydata, ylabel = (data_frame['Log2 Average Ratio'], 'Log2 Cys/NonCys')
     title = sample_name
-    colours = summary_data.loc[(summary_data['p-value'] <0.05), 'p-value colour']
+    colours = data_frame['p-value colour']
+    logger.debug(colours)
     fig = PlotUtils.simple_scatter(xdata,ydata,title, xlabel, ylabel, colours)
     return fig
 
