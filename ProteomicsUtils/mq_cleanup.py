@@ -26,7 +26,8 @@ def multifile_cleaner(input_folder, output_path, sample_names=None, proteins_fil
 
     if sample_names is None:
         logger.info(f'Sample names not set. Collecting all samples.')
-        sample_names = [x.replace('Identification type ', '').split('_')[:-1] for x in peptides.columns.tolist() if 'Identification type ' in x]
+        logger.debug(f'Columns found: {peptides.columns.tolist()}')
+        sample_names = [x.replace('Experiment ', '').split('_')[:-1] for x in peptides.columns.tolist() if 'Experiment ' in x]
         sample_names = list(set([('_').join(x) for x in sample_names]))
         logger.info(f'Samples detected: {sample_names}')
 
