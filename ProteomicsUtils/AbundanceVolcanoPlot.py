@@ -85,8 +85,7 @@ def main(input_path, output_path, sample_name, sample_type='whole_cell', replica
     if sample_type == "IP":
         logger.info(f'{sample_type} sample detected.')
         protein_Log2 = protein_NormAR.copy()
-        for col in col_list:
-                protein_Log2[col] = np.log2(protein_NormAR[col])
+        protein_Log2[col_list] = np.log2(protein_NormAR[col_list])
         logger.info(f"Log2 of Protein normalisaed abundances calculated: {protein_Log2.head(5)}")
     else:
         logger.info(f'{sample_type} sample detected. Using normalised abundances for one sample t-test')
