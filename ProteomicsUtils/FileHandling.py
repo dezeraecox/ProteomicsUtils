@@ -176,7 +176,7 @@ def PD_compiler(input_folder, fileext='.xlsx'):
 def sheet_reader(path, sheetname):
     """Reads specific sheet from xlsx file located at path into DataFrame."""
 
-    total_data = pd.read_excel(path, sheetname=sheetname)
+    total_data = pd.read_excel(path, sheet_name=sheetname)
     return total_data
 
 
