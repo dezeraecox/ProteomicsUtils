@@ -60,11 +60,11 @@ def main(input_path, output_path, sample_name, sample_type='whole_cell', replica
     logger.info(f"Proteins imported from {input_path}")
 
     # creating summary data_frame of original protein data
-    summary_cols = ['ProteinID','Description'] + col_list
+    summary_cols = ['Accession','Description'] + col_list
     logger.info(f"Columns for summary: {summary_cols}")
     protein_AR_summary = proteins_raw[summary_cols]
     # remove any proteins not seen in all replicates
-    protein_AR_summary = DataWrangling.filter_NaNs(protein_AR_summary.set_index(['ProteinID','Description']), filter_type='total', threshold=replicate_threshold)
+    protein_AR_summary = DataWrangling.filter_NaNs(protein_AR_summary.set_index(['Accession','Description']), filter_type='total', threshold=replicate_threshold)
     protein_AR_summary.reset_index(inplace=True)
     logger.info(f"Protein AR: {protein_AR_summary.head(5)}")
 
@@ -77,9 +77,8 @@ def main(input_path, output_path, sample_name, sample_type='whole_cell', replica
     # If normalising according to a bait protein, set bait protein ratio to be 1
     if norm_protein:
         assert sample_type == 'IP'
-        norm_factor = protein_NormAR[protein_NormAR['ProteinID'] == norm_protein]
-        for col in col_list:
-            protein_NormAR[col] = protein_AR_summary[col]/norm_factor[col]
+        norm_factor = protein_NormAR[protein_NormAR['Accession'] == norm_protein][col_list].values[0] # collects first instance, could change to mean
+        protein_NormAR[col_list] = protein_NormAR[col_list]/norm_factor
         logger.info(f"Protein abundances normalised to {norm_protein}: {protein_NormAR.head(5)}")
 
     # If IP sample, take the Log2 of each sample for t-tests
@@ -140,7 +139,7 @@ def main(input_path, output_path, sample_name, sample_type='whole_cell', replica
     xdata, xlabel = (df['Log2 Av AR'], 'Log2 Av. Abundance Ratio')
     ydata, ylabel = (df['Log10 p-val'], '-Log10 p-value')
     title = sample_name
-    datalabels = df['ProteinID']
+    datalabels = df['Accession']
     colours = df['colours']
 
 
@@ -171,7 +170,7 @@ def main(input_path, output_path, sample_name, sample_type='whole_cell', replica
         output_file(output, title=sample_name)
         logger.info(f"Output html will be saved to {output_path}")
 
-        hovers = [('Protein', '@ProteinID'),
+        hovers = [('Protein', '@Accession'),
             ('Gene', '@Description'),]
 
         fig3 = PlotUtils.bokeh_volcano_maker(df=df, c_col='Log10 p-val', y_col='Log10 p-val', x_col='Log2 Av AR', title=sample_name+' Volcano Plot', hover_list=hovers)
@@ -184,8 +183,8 @@ def main(input_path, output_path, sample_name, sample_type='whole_cell', replica
 
 if __name__ == "__main__":
     #default parameters if no command line arguements given
-    input_path = 'C:/Users/dezer_000/Documents/App_Dev_Projects/MS_Urea_Analysis_Project/TPEdenat/test_data/DC113-DC120_Compiled.xlsx'
-    output_path = 'C:/Users/dezer_000/Documents/App_Dev_Projects/MS_Urea_Analysis_Project/TPEdenat/test_data/'
+    input_path = 'test_data/test_data_Compiled.xlsx'
+    output_path = 'test_data/'
     sample_name = 'MG132'
     sample_type = 'whole_cell'
     replicate_threshold = 3
