@@ -17,7 +17,7 @@ logger.info('Import Successful')
 sns.set()
 
 
-def main(input_path, output_path, sample_name, sample_type='whole_cell', replicate_threshold=0, simple=True, interactive=True, Bokeh_plot=True):
+def main(input_path, output_path, sample_name, sample_type='whole_cell', replicate_threshold=0, norm_protein=False, simple=True, interactive=True, Bokeh_plot=True):
 
     logger.info(f"Analysing: {sample_name}")
     if not os.path.isdir(output_path):
@@ -71,9 +71,16 @@ def main(input_path, output_path, sample_name, sample_type='whole_cell', replica
     # Normalising each dataset to the Median Peptide Abundance
     protein_NormAR = protein_AR_summary.copy()
     for col in col_list:
-            protein_NormAR[col] = protein_AR_summary[col]/median_list[col]
+        protein_NormAR[col] = protein_AR_summary[col]/median_list[col]
     logger.info(f"Protein abundances normalised to median peptide abundance: {protein_NormAR.head(5)}")
 
+    # If normalising according to a bait protein, set bait protein ratio to be 1
+    if norm_protein:
+        assert sample_type == 'IP'
+        norm_factor = protein_NormAR[protein_NormAR['ProteinID'] == norm_protein]
+        for col in col_list:
+            protein_NormAR[col] = protein_AR_summary[col]/norm_factor[col]
+        logger.info(f"Protein abundances normalised to {norm_protein}: {protein_NormAR.head(5)}")
 
     # If IP sample, take the Log2 of each sample for t-tests
     if sample_type == "IP":
@@ -84,7 +91,6 @@ def main(input_path, output_path, sample_name, sample_type='whole_cell', replica
         logger.info(f"Log2 of Protein normalisaed abundances calculated: {protein_Log2.head(5)}")
     else:
         logger.info(f'{sample_type} sample detected. Using normalised abundances for one sample t-test')
-
 
 
     # Complete one-sample t-test on each row of NormProtAR using t-test_1samp function
